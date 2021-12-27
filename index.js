@@ -66,7 +66,7 @@ class Translator {
 					return;
 				}
 				const translatedText = this.getTranslatedText(file, elementText);
-				element.text(translatedText);
+				element.html(translatedText);
 				element.removeAttr("i18n");
 			}
 
