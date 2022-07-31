@@ -30,6 +30,16 @@ test('normalizeText', () => {
 	expect(result).toBe("hello world<br>");
 });
 
+test('normalizeHtml', () => {
+	const html = '<span ' +
+		'\t\t\tclass="asdf"\n' +
+		'\t\tid="asdf"\n' +
+		'\t  >\n\t   \ttest\n' +
+		'</span>\n\n';
+	const result = translator.translateHtml(createVinyl(html, false));
+	expect(result).toBe('<span class="asdf" id="asdf" > test </span>');
+});
+
 
 test('simpleString', () => {
 	const result = translator.translateHtml(createVinyl('<div i18n>ahoj světe!</div>'));

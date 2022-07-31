@@ -1,6 +1,6 @@
 {
 	"name": "gulp-i18n-po-translate",
-	"version": "1.5.0",
+	"version": "1.5.1",
 	"description": "Compiles html templates and javascript files using po translation file.",
 	"main": "index.js",
 	"repository": "https://github.com/chuckyblack/gulp-i18n-po-translate",

@@ -51,12 +51,11 @@ class Translator {
 	}
 
 	translateHtml(file) {
-		const content = file.contents.toString();
+		const content = this.collapseWhitespaces(file.contents.toString());
 		const root = htmlParser.parse(content);
 		root.querySelectorAll('*').forEach((element, index) => {
 			if (!this.path) {
 				// no translation file, remove marking attribut only
-				element.removeAttribute("")
 				for (const attribute in element.attributes) {
 					if (attribute.startsWith("i18n")) {
 						element.removeAttribute(attribute);
@@ -133,13 +132,23 @@ class Translator {
 		);
 	}
 
-	normalizeHtml(text) {
+	/**
+	 * @param text {string}
+	 */
+	collapseWhitespaces(text) {
 		return text
 			.replace(/\n/g, " ")
 			.replace(/\t/g, " ")
 			.replace(/[ ]+/g, ' ')
-			.replace(/\/>/g, ">")
 			.trim();
+	}
+
+	/**
+	 * <br/> -> <br>
+	 * @param text {string}
+	 */
+	normalizeHtml(text) {
+		return this.collapseWhitespaces(text).replace(/\/>/g, ">");
 	}
 
 	/**
@@ -148,7 +157,8 @@ class Translator {
 	 */
 	translateElement(file, element) {
 		const html = element.innerHTML;
-		const normalizedHtml = this.normalizeHtml(html);
+		const normalizedHtml = this.normalizeHtml(html)
+
 		const elementText = this.normalizeHtmlEntities(normalizedHtml);
 
 		if (elementText === "") {
