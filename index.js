@@ -2,6 +2,7 @@ const through = require('through2');
 const fs = require('fs');
 const pofile = require('pofile');
 const cheerio = require('cheerio');
+const htmlEntities = require('html-entities');
 
 class Translator {
 	constructor(path, translatedAttributes, throwOnMissingTranslation) {
@@ -41,7 +42,8 @@ class Translator {
 	translateHtml(file) {
 		const content = file.contents.toString();
 		const $ = cheerio.load(content, {
-			decodeEntities: false
+			decodeEntities: false,
+			_useHtmlParser2: true
 		});
 		$("*").each((index, element) => {
 			element = $(element);
@@ -125,7 +127,7 @@ class Translator {
 	}
 
 	normalizeHtml(text) {
-		return text
+		return htmlEntities.decode(text)
 			.replace(/\n/g, " ")
 			.replace(/\t/g, " ")
 			.replace(/ /g, "&nbsp;")  // non-breakable space
@@ -147,14 +149,15 @@ class Translator {
 			return;
 		}
 		let translatedText = this.getTranslatedText(file, elementText);
-		element.text(translatedText);
+		element.html(translatedText);
 		element.removeAttr("i18n");
 
 	}
 
 	translateAttr(file, element, attrName) {
 		const attrText = element.attr(attrName);
-		let translatedText = this.getTranslatedText(file, attrText.replace(/\n/g, "<br>"));
+		const normalized = htmlEntities.decode(attrText).replace(/\n/g, "<br>");
+		let translatedText = this.getTranslatedText(file, normalized);
 		translatedText = translatedText.replace(/<br>/g, "&#xa;");
 		translatedText = translatedText.replace(/"/g, "&quot;");
 		translatedText = translatedText.replace(/</g, "&lt;");

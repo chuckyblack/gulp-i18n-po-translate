@@ -9,7 +9,7 @@ function createVinyl(content, wrap=true) {
 		cwd: '/',
 		base: '/',
 		path: '/test.html',
-		contents: new Buffer(content)
+		contents: Buffer.from(content)
 	});
 }
 
@@ -107,7 +107,7 @@ test('attributeWithQuote', () => {
 });
 
 test('attributeWithQuoteEntity', () => {
-	const result = translator.translateHtml(createVinyl('<div title="ahoj &quot;uvozovky&quot">test</div>'));
+	const result = translator.translateHtml(createVinyl('<div title="ahoj &quot;uvozovky&quot;">test</div>'));
 	expect(result).toBe(wrapHtml('<div title="hello &quot;quotes&quot;">test</div>'));
 });
 
