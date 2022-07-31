@@ -51,8 +51,8 @@ class Translator {
 	}
 
 	translateHtml(file) {
-		const content = this.collapseWhitespaces(file.contents.toString());
-		const root = htmlParser.parse(content);
+		const content = file.contents.toString();
+		const root = htmlParser.parse(content, {comment: false});
 		root.querySelectorAll('*').forEach((element, index) => {
 			if (!this.path) {
 				// no translation file, remove marking attribut only
@@ -95,7 +95,7 @@ class Translator {
 			}
 		});
 
-		return root.toString();
+		return this.collapseWhitespaces(root.toString(), true);
 	}
 
 	translateJs(file) {
@@ -134,12 +134,14 @@ class Translator {
 
 	/**
 	 * @param text {string}
+	 * @param preserveNewLines {boolean}
 	 */
-	collapseWhitespaces(text) {
+	collapseWhitespaces(text, preserveNewLines=false) {
 		return text
-			.replace(/\n/g, " ")
+			.replace(/[\n]+/g, preserveNewLines ? "\n": " ")
 			.replace(/\t/g, " ")
-			.replace(/[ ]+/g, ' ')
+			.replace(/ +/g, ' ')
+			.replace(/ ?\n /g, "\n")
 			.trim();
 	}
 

@@ -37,9 +37,18 @@ test('normalizeHtml', () => {
 		'\t  >\n\t   \ttest\n' +
 		'</span>\n\n';
 	const result = translator.translateHtml(createVinyl(html, false));
-	expect(result).toBe('<span class="asdf" id="asdf" > test </span>');
+	expect(result).toBe('<span class="asdf"\nid="asdf"\n>\ntest\n</span>');
 });
 
+test('normalizeHtmlWithComment', () => {
+	const html = '<!-- asdf -->\n<span ' +
+		'\t\t\tclass="asdf"\n' +
+		'\t\tid="asdf"\n' +
+		'\t  >\n\t   \ttest\n' +
+		'</span>\n\n';
+	const result = translator.translateHtml(createVinyl(html, false));
+	expect(result).toBe('<span class="asdf"\nid="asdf"\n>\ntest\n</span>');
+});
 
 test('simpleString', () => {
 	const result = translator.translateHtml(createVinyl('<div i18n>ahoj světe!</div>'));
