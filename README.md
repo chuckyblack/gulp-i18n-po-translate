@@ -1,7 +1,6 @@
 # gulp-i18n-po-translate
 
-[![Build Status](https://travis-ci.org/chuckyblack/gulp-i18n-po-translate.svg?branch=master)](https://travis-ci.org/chuckyblack/gulp-i18n-po-translate.svg?branch=master)
-
+![example workflow](https://github.com/chuckyblack/gulp-i18n-po-translate/actions/workflows/test.yml/badge.svg)
 
 Compiles html templates using po translation file.
 

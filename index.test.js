@@ -9,7 +9,7 @@ function createVinyl(content, wrap=true) {
 		cwd: '/',
 		base: '/',
 		path: '/test.html',
-		contents: new Buffer(content)
+		contents: Buffer.from(content)
 	});
 }
 
