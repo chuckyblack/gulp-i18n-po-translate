@@ -1,9 +1,15 @@
 const through = require('through2');
 const fs = require('fs');
 const pofile = require('pofile');
-const cheerio = require('cheerio');
+const htmlParser = require('node-html-parser');
+const htmlEntities = require('html-entities');
 
 class Translator {
+	/**
+	 * @param path {string}
+	 * @param translatedAttributes {string[]}
+	 * @param throwOnMissingTranslation {boolean}
+	 */
 	constructor(path, translatedAttributes, throwOnMissingTranslation) {
 		this.path = path;
 		this.translatedAttributes = translatedAttributes;
@@ -14,6 +20,9 @@ class Translator {
 		}
 	}
 
+	/**
+	 * @param path {string}
+	 */
 	loadPoFile(path) {
 		const data = fs.readFileSync(path, 'utf-8');
 		const po = pofile.parse(data);
@@ -26,6 +35,9 @@ class Translator {
 		});
 	}
 
+	/**
+	 * @param file {string}
+	 */
 	translate(file) {
 		const ext = file.relative.split('.').pop();
 		switch (ext) {
@@ -40,54 +52,51 @@ class Translator {
 
 	translateHtml(file) {
 		const content = file.contents.toString();
-		const $ = cheerio.load(content, {
-			decodeEntities: false
-		});
-		$("*").each((index, element) => {
-			element = $(element);
+		const root = htmlParser.parse(content);
+		root.querySelectorAll('*').forEach((element, index) => {
 			if (!this.path) {
 				// no translation file, remove marking attribut only
-				const attrs = element[0].attribs;
-				for (let attr in attrs) {
-					if (attr.startsWith("i18n")) {
-						element.removeAttr(attr);
+				element.removeAttribute("")
+				for (const attribute in element.attributes) {
+					if (attribute.startsWith("i18n")) {
+						element.removeAttribute(attribute);
 					}
+
 				}
 				return;
 			}
-			if (this.hasAttr(element, "i18n")) {
+			if (element.hasAttribute("i18n")) {
 				this.translateElement(file, element);
 			}
 
 			// automated translated attributes
 			this.translatedAttributes.forEach(attrName => {
 				const noI18nAttr = "no-i18n-" + attrName;
-				const noTranslate = this.hasAttr(element, noI18nAttr);
+				const noTranslate = element.hasAttribute(noI18nAttr);
 
-				if (this.hasAttr(element, attrName) && !noTranslate) {
-					this.translateAttr(file, element, attrName);
+				if (element.hasAttribute(attrName) && !noTranslate) {
+					this.translateAttribute(file, element, attrName);
 				}
 
 				if (noTranslate) {
-					element.removeAttr(noI18nAttr);
+					element.removeAttribute(noI18nAttr);
 				}
 			});
 
 			// translated attributes marked with i18n-{{ attrname }}
-			const attrs = element[0].attribs;
-			for (let attr in attrs) {
-				const value = attrs[attr];
-				if (attr.startsWith("i18n-")) {
-					const attrName = attr.replace("i18n-", "");
-					if (this.hasAttr(element, attrName) && !this.translatedAttributes.includes(attrName)) {
-						this.translateAttr(file, element, attrName);
+			for (const attribute in element.attributes) {
+				if (attribute.startsWith("i18n-")) {
+					const value = element.getAttribute(attribute);
+					const attrName = attribute.replace("i18n-", "");
+					if (element.hasAttribute(attrName) && !this.translatedAttributes.includes(attrName)) {
+						this.translateAttribute(file, element, attrName);
 					}
-					element.removeAttr(attr);
+					element.removeAttribute(attribute);
 				}
 			}
 		});
 
-		return $.html();
+		return root.toString();
 	}
 
 	translateJs(file) {
@@ -128,38 +137,51 @@ class Translator {
 		return text
 			.replace(/\n/g, " ")
 			.replace(/\t/g, " ")
-			.replace(/ /g, "&nbsp;")  // non-breakable space
 			.replace(/[ ]+/g, ' ')
 			.replace(/\/>/g, ">")
 			.trim();
 	}
 
-	hasAttr(element, attrName) {
-		const attr = element.attr(attrName);
-		return typeof attr !== typeof undefined && attr !== false;
-	}
-
+	/**
+	 * @param file
+	 * @param element {HTMLElement}
+	 */
 	translateElement(file, element) {
-		const html = element.html();
-		const elementText = this.normalizeHtml(html);
+		const html = element.innerHTML;
+		const normalizedHtml = this.normalizeHtml(html);
+		const elementText = this.normalizeHtmlEntities(normalizedHtml);
+
 		if (elementText === "") {
 			// valid state - element has no content, eg. <input>
 			return;
 		}
-		let translatedText = this.getTranslatedText(file, elementText);
-		element.text(translatedText);
-		element.removeAttr("i18n");
-
+		element.innerHTML = this.getTranslatedText(file, elementText);
+		element.removeAttribute("i18n");
 	}
 
-	translateAttr(file, element, attrName) {
-		const attrText = element.attr(attrName);
-		let translatedText = this.getTranslatedText(file, attrText.replace(/\n/g, "<br>"));
-		translatedText = translatedText.replace(/<br>/g, "&#xa;");
-		translatedText = translatedText.replace(/"/g, "&quot;");
-		translatedText = translatedText.replace(/</g, "&lt;");
-		translatedText = translatedText.replace(/>/g, "&gt;");
-		element.attr(attrName, translatedText);
+	/**
+	 * @param file
+	 * @param element {HTMLElement}
+	 * @param attrName {string}
+	 */
+	translateAttribute(file, element, attrName) {
+		const attrText = element.getAttribute(attrName);
+		const normalizedText = this.normalizeHtmlEntities(attrText);
+		const translatedText = (
+			this.getTranslatedText(file, normalizedText)
+				.replace(/<br>/g, "&#xa;")
+				.replace(/"/g, "&quot;")
+		);
+		element.setAttribute(attrName, translatedText);
+	}
+
+	/**
+	 * @param text {string}
+	 */
+	normalizeHtmlEntities(text) {
+		return htmlEntities.decode(text)
+			.replace(/\n/g, "<br>")
+			.replace(/ /g, "&nbsp;");
 	}
 }
 
